@@ -5,6 +5,7 @@ import WorkoutSuggestions from './WorkoutSuggestions';
 import CardioInput from './CardioInput';
 
 function WorkoutHistory({ workouts, onWorkoutDeleted, addWorkout }) {
+  console.log('WorkoutHistory: workouts prop', workouts); // Log 1
   const [filterType, setFilterType] = useState('all'); // 'all', 'daily', 'weekly', 'custom'
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -16,17 +17,27 @@ function WorkoutHistory({ workouts, onWorkoutDeleted, addWorkout }) {
   const [showCardioInputModal, setShowCardioInputModal] = useState(false);
   const [currentView, setCurrentView] = useState('exerciseSummary'); // New state for view management
 
+  console.log('WorkoutHistory: currentView state', currentView); // Log 2
+
   // Effect to manage body scroll when modals are open
   useEffect(() => {
     const isAnyModalOpen = showSuggestionsModal || showAddExerciseModal || showCardioInputModal;
+
+    const preventScroll = (e) => {
+      e.preventDefault();
+    };
+
     if (isAnyModalOpen) {
       document.body.style.overflow = 'hidden';
+      document.body.addEventListener('touchmove', preventScroll, { passive: false });
     } else {
       document.body.style.overflow = ''; // Reset to default
+      document.body.removeEventListener('touchmove', preventScroll);
     }
-    // Cleanup function to ensure scroll is re-enabled when component unmounts or states change
+
     return () => {
       document.body.style.overflow = '';
+      document.body.removeEventListener('touchmove', preventScroll);
     };
   }, [showSuggestionsModal, showAddExerciseModal, showCardioInputModal]);
 
@@ -149,6 +160,7 @@ function WorkoutHistory({ workouts, onWorkoutDeleted, addWorkout }) {
 
   // Separate strength and cardio workouts
   const strengthWorkouts = workouts.filter(workout => workout.exercise && !workout.duration);
+  console.log('WorkoutHistory: strengthWorkouts', strengthWorkouts); // Log 3
   const cardioWorkouts = workouts.filter(workout => workout.type === 'cardio');
 
   // Group strength workouts by date for display
@@ -160,6 +172,7 @@ function WorkoutHistory({ workouts, onWorkoutDeleted, addWorkout }) {
     groups[date].push(workout);
     return groups;
   }, {});
+  console.log('WorkoutHistory: groupedStrengthWorkouts', groupedStrengthWorkouts); // Log 4
 
   // Group cardio workouts by date for display
   const groupedCardioWorkouts = filterWorkouts(cardioWorkouts).reduce((groups, workout) => {
@@ -172,24 +185,12 @@ function WorkoutHistory({ workouts, onWorkoutDeleted, addWorkout }) {
   }, {});
 
   return (
-    <div style={{
-      padding: '20px',
-      background: '#1e1e2f',
-      borderRadius: '15px',
-      marginTop: '20px',
-      position: 'relative',
-      zIndex: 2
-    }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '20px'
-      }}>
+    <div className="workout-history-container">
+      <div className="history-header-controls">
         <h2 style={{ color: '#00f2fe', textAlign: 'center', margin: 0 }}>
           Workout History
         </h2>
-        <div style={{ display: 'flex', gap: '10px', position: 'relative', zIndex: 20, pointerEvents: 'auto' }}>
+        <div className="history-buttons-wrapper">
           <button
             onClick={() => setShowAddExerciseModal(true)}
             style={{
@@ -264,7 +265,7 @@ function WorkoutHistory({ workouts, onWorkoutDeleted, addWorkout }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+      <div className="summary-buttons-wrapper">
         <button
           onClick={() => setCurrentView('exerciseSummary')}
           style={{
@@ -295,15 +296,9 @@ function WorkoutHistory({ workouts, onWorkoutDeleted, addWorkout }) {
       </div>
 
       {currentView === 'exerciseSummary' && (
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          {/* Filter Controls */}
-          <div style={{
-            display: 'flex',
-            gap: '10px',
-            marginBottom: '20px',
-            flexWrap: 'wrap',
-            justifyContent: 'center'
-          }}>
+        <>
+          <div className="filter-options-wrapper">
+            {/* Filter Controls */}
             <button
               onClick={() => setFilterType('all')}
               style={{
@@ -464,7 +459,7 @@ function WorkoutHistory({ workouts, onWorkoutDeleted, addWorkout }) {
               ))}
             </div>
           )}
-        </div>
+        </>
       )}
 
       {currentView === 'cardioSummary' && (
